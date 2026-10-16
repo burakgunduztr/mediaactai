@@ -1,0 +1,31 @@
+# Codex project config for TempScore — the multi-agent dev workflow.
+# Same six roles as the Claude Code/Copilot/Cursor/Antigravity setups; see
+# .github/copilot-instructions.md / .agents/rules/project-context.md for the
+# shared project context every agent should read first.
+# Project-scoped `.codex/` layers load only after you TRUST this project
+# (Codex prompts once on first run in the repo).
+
+[agents]
+# ship-parallel-lanes splits into 2 lanes (C# pipeline vs Python music_service);
+# cap a little above that so a stray extra spawn doesn't run away.
+max_threads = 4
+# Root spawns direct children only (no recursive fan-out). Keep at 1.
+max_depth = 1
+# Generous per-worker timeout so a full implement+test lane can finish.
+job_max_runtime_seconds = 2400
+
+# Linear MCP so the pm/qa agents can read/move the TMT-* tickets in the
+# mediaactai workspace (team MED, project TempScore) and post close-out
+# comments. Remote (Streamable HTTP) server with OAuth discovery:
+# run `codex mcp login linear` ONCE to authenticate — never put a token here.
+# `required = false` so you can still code offline; the pm agent should error
+# loudly if it needs Linear and can't reach it, rather than silently skipping.
+[mcp_servers.linear]
+url = "https://mcp.linear.app/mcp"
+required = false
+
+[mcp_servers.linear.tools.save_issue]
+approval_mode = "approve"
+
+[mcp_servers.linear.tools.save_comment]
+approval_mode = "approve"

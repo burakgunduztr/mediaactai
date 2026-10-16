@@ -1,0 +1,63 @@
+# Python
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# .NET / WinUI
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+TestResults/
+*.nupkg
+*.snupkg
+
+# Model weights and download caches (setup downloads, not source)
+.cache/
+.huggingface/
+models/
+checkpoints/
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.onnx
+
+# Pipeline run output
+runs/
+frames/
+cuts.log
+score.wav
+test.wav
+output.mp4
+
+# Local planning (not source)
+epic/
+notes/
+
+# OS
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+Desktop.ini
+
+# Editors (local only; agent configs under .cursor/.claude/.codex stay tracked)
+.idea/
+*.swp
+*~

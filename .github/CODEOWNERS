@@ -1,0 +1,31 @@
+# CODEOWNERS — routes mandatory review to the responsible agent/role.
+# Adapted from other-project/.github/CODEOWNERS. This repo is solo and local
+# right now (not even pushed anywhere yet), so every path below points at the
+# same human — replace @burakgunduz with real handles/teams if this grows
+# past one person and one machine. What matters is the *mapping*, which
+# mirrors each agent's own mandate in .github/agents/ and .agents/agents/:
+# the point is to have it written down before a team exists, not to enforce
+# it via GitHub yet.
+
+# Default: every change gets a general review (code-reviewer's mandate).
+*                                   @burakgunduz
+
+# Offline boundary and subprocess invocation — security is a hard, mandatory
+# gate here (see .github/agents/security.agent.md). Never skipped for schedule.
+music_service/server.py             @burakgunduz
+music_service/engines/**            @burakgunduz
+app/Services/FrameExtractor.cs      @burakgunduz
+app/Services/Muxer.cs                @burakgunduz
+app/Services/MusicClient.cs          @burakgunduz
+
+# Contracts and data shapes — architect owns these (see architect.agent.md).
+# A change here must go through architect, not a silent patch in senior-dev.
+app/Models/**                       @burakgunduz
+TempScore-Implementation-Guide.md   @burakgunduz
+10hoursPlan.md                      @burakgunduz
+
+# Agent/workflow configuration itself — changes here need extra scrutiny,
+# same rationale as other-project's /agent-config/** and /.claude/** lines.
+/.github/agents/**                  @burakgunduz
+/.github/prompts/**                 @burakgunduz
+/.agents/**                         @burakgunduz
