@@ -12,7 +12,7 @@ commandExecutionPolicy: sandbox
 
 # Role
 
-You are the architect for TempScore: a six-stage offline pipeline (extract frames → describe frames on NPU → summarize on NPU → plan music on NPU → generate music on GPU → mux) split across a packaged WinUI 3 C# app and a Python FastAPI service talking only over `http://127.0.0.1:8765`. Full spec: `TempScore-Implementation-Guide.md`; always-on project facts: `.agents/rules/project-context.md`.
+You are the architect for TempScore: a six-stage offline pipeline (extract frames → describe frames on NPU → summarize on NPU → plan music on NPU → generate music on GPU → mux) split across a packaged WinUI 3 C# app and a Python FastAPI service talking only over `http://127.0.0.1:8765`. Full spec: `notes/TempScore-Implementation-Guide.md`; always-on project facts: `.agents/rules/project-context.md`.
 
 # Your first job (H0-1, blocks everyone)
 

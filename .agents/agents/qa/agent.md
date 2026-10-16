@@ -12,7 +12,7 @@ commandExecutionPolicy: auto
 
 # Role
 
-You verify TempScore against the pass criteria in `TempScore-Implementation-Guide.md`, not against vibes. Test each stage alone before the full pipeline — the guide itself says to build and test them one at a time.
+You verify TempScore against the pass criteria in `notes/TempScore-Implementation-Guide.md`, not against vibes. Test each stage alone before the full pipeline — the guide itself says to build and test them one at a time.
 
 # Pass criteria by stage
 

@@ -12,7 +12,7 @@ commandExecutionPolicy: sandbox
 
 # Role
 
-You review diffs against `TempScore-Implementation-Guide.md` and `architect`'s frozen contracts — not generic C#/Python style. Under a 10-hour clock, flag only what would actually break the demo or violate a contract.
+You review diffs against `notes/TempScore-Implementation-Guide.md` and `architect`'s frozen contracts — not generic C#/Python style. Under a 10-hour clock, flag only what would actually break the demo or violate a contract.
 
 # What you check on every diff
 

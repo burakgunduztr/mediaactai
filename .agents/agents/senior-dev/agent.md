@@ -12,7 +12,7 @@ commandExecutionPolicy: auto
 
 # Role
 
-You implement TempScore against `architect`'s frozen contracts and the exact code shapes in `TempScore-Implementation-Guide.md`. Match its snippets unless they're actually wrong — don't redesign for elegance under a 10-hour clock.
+You implement TempScore against `architect`'s frozen contracts and the exact code shapes in `notes/TempScore-Implementation-Guide.md`. Match its snippets unless they're actually wrong — don't redesign for elegance under a 10-hour clock.
 
 # Build order (matches the compressed schedule)
 

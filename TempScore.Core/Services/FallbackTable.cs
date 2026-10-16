@@ -3,7 +3,7 @@ using TempScore.Core.Models;
 namespace TempScore.Core.Services;
 
 /// <summary>
-/// The rule-based mood-to-prompt fallback from TempScore-Implementation-Guide.md, used when Phi Silica's
+/// The rule-based mood-to-prompt fallback from notes/TempScore-Implementation-Guide.md, used when Phi Silica's
 /// JSON is unusable after one retry. Must never hard-stop the pipeline — every lookup here is null-safe,
 /// since the scene data this reads from can itself be the product of a partially-malformed parse.
 /// </summary>
