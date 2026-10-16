@@ -2,7 +2,7 @@
 
 TempScore turns a 60-second video into the same video with an original, offline-generated soundtrack. Everything runs on one laptop (Intel Core Ultra 5 336H NPU, NVIDIA RTX PRO 500 Blackwell 6 GB, 32 GB RAM). Nothing may ever leave the machine — no cloud calls, no telemetry, no network access outside `127.0.0.1`.
 
-**The single source of truth is `TempScore-Implementation-Guide.md` at the repo root.** It has the full six-stage pipeline spec, exact code snippets, prompts, JSON schemas, and the risk/fallback table. Read it before writing or reviewing any code here. Do not invent an API shape, file path, or prompt that conflicts with it — if something is ambiguous, say so instead of guessing.
+**The single source of truth is `notes/TempScore-Implementation-Guide.md` at the repo root.** It has the full six-stage pipeline spec, exact code snippets, prompts, JSON schemas, and the risk/fallback table. Read it before writing or reviewing any code here. Do not invent an API shape, file path, or prompt that conflicts with it — if something is ambiguous, say so instead of guessing.
 
 ## Pipeline (six stages)
 

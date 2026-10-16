@@ -4,7 +4,7 @@ namespace TempScore.Core.Services;
 
 /// <summary>
 /// BPM clamping, segment gap/overlap/length correction, and prompt-restatement, per
-/// TempScore-Implementation-Guide.md's MusicPlanner step. This is the single gate every
+/// notes/TempScore-Implementation-Guide.md's MusicPlanner step. This is the single gate every
 /// plan — real or fallback — passes through, so it must never throw on malformed input;
 /// the whole point of the "never hard-stop" pipeline is that this is the last line of defense.
 /// </summary>

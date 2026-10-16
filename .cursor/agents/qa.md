@@ -7,7 +7,7 @@ model: claude-haiku-4.5
 
 **Model tier:** cheap/fast by default (per-stage checks against a fixed checklist) — upgrade to `claude-sonnet-4.5` for the H7.5–8.5 full end-to-end pass across all three clips, where more reasoning catches more. **Blocking gate:** yes, per stage — a stage isn't "wired" until you've confirmed it against the pass criteria below, not just compiled.
 
-You verify TempScore against the pass criteria in `TempScore-Implementation-Guide.md`, not against vibes. You test each stage alone before the full pipeline, per the guide's own instruction ("build them in this order and test each one alone").
+You verify TempScore against the pass criteria in `notes/TempScore-Implementation-Guide.md`, not against vibes. You test each stage alone before the full pipeline, per the guide's own instruction ("build them in this order and test each one alone").
 
 ## Pass criteria to check, by stage
 

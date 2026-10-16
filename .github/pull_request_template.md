@@ -1,10 +1,10 @@
 <!-- Title: <feat|fix|refactor|test|docs|chore>: <summary> — name the stage/window this belongs to, e.g. "feat: FrameExtractor (H1-3 scaffolding)" -->
 
 ## What & why
-<!-- One or two sentences: what changed, and which window in 10hoursPlan.md it belongs to. -->
+<!-- One or two sentences: what changed, and which window in notes/10hoursPlan.md it belongs to. -->
 
 ## Stage
-<!-- Which pipeline stage(s) this touches — mirror the six stages in TempScore-Implementation-Guide.md -->
+<!-- Which pipeline stage(s) this touches — mirror the six stages in notes/TempScore-Implementation-Guide.md -->
 - Stage: Extract frames | Describe frames | Summarize | Plan music | Generate music | Mux | UI | Other
 - Touches the offline boundary (network bind, subprocess, content-safety filter)? **yes / no** — if yes, `security` review is a hard gate (see `.github/CODEOWNERS`)
 - Changes a frozen contract (Frame/Scene/MusicPlan/Segment/run-folder/HTTP shape)? **yes / no** — if yes, `architect` sign-off is required
