@@ -1,0 +1,16 @@
+# TempScore music_service dependencies. Every package here is pinned to the
+# exact version confirmed working via TMT-4's Mac CPU dry run
+# (notes/EnvironmentSetupPreMac.md). torch/torchaudio below are the default
+# CPU wheel resolved on Mac — on the ThinkPad, reinstall with the CUDA 12.8
+# index before trusting any GPU timing (placeholder, not run from here):
+#
+#   pip install torch==2.14.1 torchaudio==2.11.0 --index-url https://download.pytorch.org/whl/cu128
+#
+# then confirm `python -c "import torch; print(torch.cuda.is_available())"` prints True.
+fastapi==0.143.3
+uvicorn==0.54.0
+soundfile==0.14.0
+scipy==1.17.1
+transformers==5.20.1
+torch==2.14.1
+torchaudio==2.11.0
