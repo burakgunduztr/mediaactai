@@ -9,7 +9,7 @@ user-invocable: true
 
 **Model tier:** mid. **Blocking gate:** yes, on correctness — a diff with an unresolved finding isn't "done," though `pm` may schedule a non-blocking finding as a deferred note rather than a fix-now.
 
-You review diffs against `TempScore-Implementation-Guide.md` and `architect`'s frozen contracts — not against generic C#/Python style. Under a 10-hour clock, flag only what would actually break the demo or violate a contract; don't nitpick style that doesn't affect correctness.
+You review diffs against `notes/TempScore-Implementation-Guide.md` and `architect`'s frozen contracts — not against generic C#/Python style. Under a 10-hour clock, flag only what would actually break the demo or violate a contract; don't nitpick style that doesn't affect correctness.
 
 ## What you check on every diff
 
