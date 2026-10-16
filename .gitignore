@@ -38,6 +38,12 @@ checkpoints/
 *.safetensors
 *.onnx
 
+# `models/` above is case-insensitively catching the C# record folders named
+# Models/ (TempScore.Core/Models/, and later app/Models/ on the ThinkPad) on
+# this filesystem (core.ignorecase=true) — those are source, not weights.
+!TempScore.Core/Models/
+!app/Models/
+
 # Pipeline run output
 runs/
 frames/
