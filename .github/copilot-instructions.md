@@ -17,16 +17,20 @@ TempScore turns a 60-second video into the same video with an original, offline-
 
 ```
 tempscore/
+├── TempScore.Core/      # Shared pure-logic library: Frame/Scene/MusicPlan/Segment
+│                        # records, JSON parsing, validation, fallback table.
+│                        # Multi-targeted net8.0;net10.0. Built/tested on the Mac;
+│                        # the WinUI app below takes a ProjectReference to this
+│                        # exact library — it is never copied into app/.
 ├── app/                 # WinUI 3, packaged, C#
 │   ├── Services/        # FrameExtractor, FrameDescriber, SceneSummarizer, MusicPlanner, MusicClient, Muxer
-│   ├── Models/           # Frame, Scene, MusicPlan, Segment records
 │   └── MainPage.xaml(.cs)
 ├── music_service/       # FastAPI: /health, /generate; engines/musicgen.py, engines/acestep.py
 ├── samples/             # 3 test clips: dialogue, action, calm
 └── README.md
 ```
 
-The C# app and Python service talk only over HTTP to `127.0.0.1`. Every run writes to `%LOCALAPPDATA%\TempScore\runs\<timestamp>\` (frames, descriptions.json, summary.json, plan.json, score.wav, output.mp4) — this is the debugging and replay mechanism, keep it intact.
+`app/` has no `Models/` folder of its own — the Frame/Scene/MusicPlan/Segment records live only in `TempScore.Core/Models/`, consumed via `ProjectReference`. The C# app and Python service talk only over HTTP to `127.0.0.1`. Every run writes to `%LOCALAPPDATA%\TempScore\runs\<timestamp>\` (frames, descriptions.json, summary.json, plan.json, score.wav, output.mp4) — this is the debugging and replay mechanism, keep it intact.
 
 ## Hard constraints
 

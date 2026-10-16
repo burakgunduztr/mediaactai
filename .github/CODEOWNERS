@@ -20,9 +20,13 @@ app/Services/MusicClient.cs          @burakgunduz
 
 # Contracts and data shapes — architect owns these (see architect.agent.md).
 # A change here must go through architect, not a silent patch in senior-dev.
-app/Models/**                       @burakgunduz
-TempScore-Implementation-Guide.md   @burakgunduz
-10hoursPlan.md                      @burakgunduz
+# TempScore.Core/Models + Services hold the actual contract/validation code —
+# the WinUI app references this library (ProjectReference), it never gets a
+# duplicate app/Models/ folder of its own.
+TempScore.Core/Models/**            @burakgunduz
+TempScore.Core/Services/**          @burakgunduz
+notes/TempScore-Implementation-Guide.md @burakgunduz
+notes/10hoursPlan.md                @burakgunduz
 
 # Agent/workflow configuration itself — changes here need extra scrutiny,
 # same rationale as other-project's /agent-config/** and /.claude/** lines.

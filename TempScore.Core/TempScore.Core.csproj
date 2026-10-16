@@ -1,7 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <!-- Multi-targeted on purpose: net10.0 so this builds/tests standalone on the Mac
+         (matching TempScore.Core.Tests' TFM), and net8.0 so the WinUI app on the
+         ThinkPad (net8.0-windows10.0.19041.0) can take a ProjectReference to this
+         exact library instead of a copy — see notes/EnvironmentSetupPreMac.md. -->
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
