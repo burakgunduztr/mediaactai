@@ -1,9 +1,10 @@
-"""TMT-3: music_service scaffolding against a stub engine.
+"""TMT-9: music_service wired to the real MusicGen engine.
 
 /health and /generate per the frozen contract in notes/TempScore-Implementation-Guide.md
-(Step 7). Swap `engines.stub.StubEngine` for `engines.musicgen.MusicGenEngine` /
-`engines.acestep.AceStepEngine` in TMT-9 without touching anything else here —
-both real engines will share the same generate(prompt, seconds) -> (audio, sr) signature.
+(Step 7), unchanged since TMT-3 — only which engine class gets instantiated changed.
+ACE-Step is out of scope for this build (engine decision locked on MED-11, see
+notes/switchingToFoundryLocal.md); engines.stub.StubEngine remains for reference/tests
+that don't want real inference, but is no longer what the server starts by default.
 
 Security note (MED-6 review, architect-approved clarification of the frozen contract):
 `out_path` is request-controlled and this endpoint writes to it, so every request is
@@ -22,10 +23,10 @@ from fastapi import FastAPI, HTTPException
 from fastapi import Request as HttpRequest
 from pydantic import BaseModel
 
-from engines.stub import StubEngine
+from engines.musicgen import MusicGenEngine
 
 app = FastAPI()
-engine = StubEngine()  # loaded once at startup, reused across every request
+engine = MusicGenEngine()  # loaded once at startup, reused across every request
 FADE = 1.0  # seconds of crossfade between segments
 
 # Bind to the loopback interface only — this is the one line that keeps the
