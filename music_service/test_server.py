@@ -1,8 +1,12 @@
-"""TMT-3 automated verification: starts the real server (bound to 127.0.0.1,
-not an in-process test client), posts /health and /generate, checks the
-returned WAV, and confirms the request-validation gates added after the
-MED-6 security review actually reject what they're supposed to. Exits 0 on
+"""TMT-3/TMT-9 automated verification: starts the real server (bound to
+127.0.0.1, not an in-process test client) against the real MusicGenEngine
+(TMT-9 — no more stub), posts /health and /generate, checks the returned
+WAV, and confirms the request-validation gates added after the MED-6
+security review actually reject what they're supposed to. Exits 0 on
 success, non-zero with a clear message otherwise.
+
+Timeouts are generous (model load + real CPU inference, not instant stub
+generation) — don't tighten these back down just because the stub was fast.
 """
 
 import json
@@ -23,7 +27,7 @@ BASE = f"http://{HOST}:{PORT}"
 FADE = 1.0
 
 
-def wait_for_health(timeout: float = 15.0) -> dict:
+def wait_for_health(timeout: float = 180.0) -> dict:
     deadline = time.time() + timeout
     while time.time() < deadline:
         try:
@@ -40,7 +44,7 @@ def post_generate(segments: list[dict], out_path: str, content_type: str = "appl
         f"{BASE}/generate", data=body, headers={"Content-Type": content_type}, method="POST"
     )
     try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
+        with urllib.request.urlopen(req, timeout=180) as resp:
             return resp.status, json.loads(resp.read())
     except urllib.error.HTTPError as e:
         return e.code, json.loads(e.read())
@@ -78,8 +82,8 @@ def main() -> int:
                     "answered — that response came from a stale process already holding the port, not ours"
                 )
                 return 1
-            if not (health.get("ok") is True and health.get("engine") == "StubEngine"):
-                print(f"FAIL: /health did not report the stub engine correctly: {health}")
+            if not (health.get("ok") is True and health.get("engine") == "MusicGenEngine"):
+                print(f"FAIL: /health did not report the real engine correctly: {health}")
                 return 1
 
             all_ok = True
