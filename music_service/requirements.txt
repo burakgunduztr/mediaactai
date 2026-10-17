@@ -2,11 +2,15 @@
 # exact version confirmed working via TMT-4's Mac CPU dry run
 # (notes/EnvironmentSetupPreMac.md). torch/torchaudio below are the default
 # CPU wheel resolved on Mac — on the ThinkPad, reinstall with the CUDA 12.8
-# index before trusting any GPU timing (placeholder, not run from here):
+# index before trusting any GPU timing. Install unpinned first — the cu128
+# index doesn't carry every version PyPI does, so pinning to the Mac-resolved
+# versions here (2.14.1 / 2.11.0) 404s. Resolve to whatever's actually
+# published, confirm it works, then update the pins below to match:
 #
-#   pip install torch==2.14.1 torchaudio==2.11.0 --index-url https://download.pytorch.org/whl/cu128
+#   pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu128
 #
-# then confirm `python -c "import torch; print(torch.cuda.is_available())"` prints True.
+# then confirm `python -c "import torch; print(torch.cuda.is_available())"` prints True,
+# then `pip show torch torchaudio` and update the two pins below to the real versions.
 fastapi==0.143.3
 uvicorn==0.54.0
 soundfile==0.14.0
