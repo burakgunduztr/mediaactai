@@ -26,7 +26,12 @@ public sealed class MusicClient : IDisposable
 
     public MusicClient(string baseAddress = "http://127.0.0.1:8765")
     {
-        _http = new HttpClient { BaseAddress = new Uri(baseAddress) };
+        // /generate renders real audio for a whole plan's worth of segments, not just
+        // one short clip — found as a real hang risk under MED-17/TMT-13, which is the
+        // first caller to run this against a full multi-segment plan rather than TMT-8's
+        // single short test segment. HttpClient's 100s default isn't enough; 10 minutes
+        // is a generous ceiling that still eventually fails instead of hanging forever.
+        _http = new HttpClient { BaseAddress = new Uri(baseAddress), Timeout = TimeSpan.FromMinutes(10) };
     }
 
     public async Task<bool> IsHealthyAsync()
