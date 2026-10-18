@@ -17,18 +17,32 @@ Prerequisites (see notes/GUIDE_foundrylocalsetup.md for the Windows side):
     brew tap microsoft/foundrylocal && brew trust microsoft/foundrylocal && brew install foundrylocal
     foundry model download phi-4-mini
     foundry model load phi-4-mini
+
+Usage:
+    python smoke_test.py                              # uses DEFAULT_BASE (this Mac's port)
+    python smoke_test.py --base http://127.0.0.1:<port>  # real ThinkPad finding: the port is
+                                                           # assigned fresh per `foundry server
+                                                           # status` daemon start and is NOT
+                                                           # stable across machines -- confirmed
+                                                           # different on the real ThinkPad --
+                                                           # get the real port from `foundry
+                                                           # server status` first (plain `foundry
+                                                           # status` doesn't work there).
+    FOUNDRY_LOCAL_BASE_URL=http://127.0.0.1:<port> python smoke_test.py   # equivalent env var form
 """
 
+import argparse
 import json
+import os
 import sys
 import urllib.error
 import urllib.request
 
-BASE = "http://127.0.0.1:56343"
+DEFAULT_BASE = "http://127.0.0.1:56343"  # this Mac's port only -- see Usage above, don't hand-edit this for another machine
 ALIAS_PREFIX = "phi-4-mini-instruct"  # case-insensitive match against /v1/models ids
 
 
-def resolve_model_id() -> str:
+def resolve_model_id(base: str) -> str:
     """The chat/completions endpoint wants the exact catalog id (e.g.
     "Phi-4-mini-instruct-generic-gpu:5"), not the short CLI alias
     ("phi-4-mini") used by `foundry model download/load` — confirmed by
@@ -37,7 +51,7 @@ def resolve_model_id() -> str:
     the version suffix, since that number can change between catalog
     updates.
     """
-    with urllib.request.urlopen(f"{BASE}/v1/models", timeout=5) as resp:
+    with urllib.request.urlopen(f"{base}/v1/models", timeout=5) as resp:
         models = json.loads(resp.read())["data"]
     for m in models:
         if m["id"].lower().startswith(ALIAS_PREFIX):
@@ -49,7 +63,7 @@ def resolve_model_id() -> str:
     )
 
 
-def chat(model_id: str, system: str, user: str) -> str:
+def chat(base: str, model_id: str, system: str, user: str) -> str:
     body = json.dumps(
         {
             "model": model_id,
@@ -62,7 +76,7 @@ def chat(model_id: str, system: str, user: str) -> str:
         }
     ).encode()
     req = urllib.request.Request(
-        f"{BASE}/v1/chat/completions",
+        f"{base}/v1/chat/completions",
         data=body,
         headers={"Content-Type": "application/json"},
         method="POST",
@@ -73,11 +87,25 @@ def chat(model_id: str, system: str, user: str) -> str:
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--base",
+        default=os.environ.get("FOUNDRY_LOCAL_BASE_URL", DEFAULT_BASE),
+        help="Foundry Local base URL, e.g. http://127.0.0.1:<port>. Get <port> from "
+             "`foundry server status` (not `foundry status` -- confirmed not to work on "
+             "the real ThinkPad). Defaults to $FOUNDRY_LOCAL_BASE_URL if set, else this "
+             "Mac's own port -- almost certainly wrong on any other machine.",
+    )
+    args = parser.parse_args()
+    base = args.base
+
     try:
-        model_id = resolve_model_id()
+        model_id = resolve_model_id(base)
     except (urllib.error.URLError, ConnectionRefusedError) as exc:
-        print(f"FAIL: Foundry Local service not reachable at {BASE} ({exc}). "
-              f"Run `foundry server start` first.", file=sys.stderr)
+        print(f"FAIL: Foundry Local service not reachable at {base} ({exc}). "
+              f"Run `foundry server status` to find the real port and pass it with "
+              f"--base (or set FOUNDRY_LOCAL_BASE_URL), or `foundry server restart` "
+              f"if the service seems unresponsive.", file=sys.stderr)
         return 1
     except RuntimeError as exc:
         print(f"FAIL: {exc}", file=sys.stderr)
@@ -86,6 +114,7 @@ def main() -> int:
     print(f"Resolved model id: {model_id}")
 
     content = chat(
+        base,
         model_id,
         system="You output only valid JSON, no prose, no markdown fences.",
         user="Describe a sad rainy film scene as JSON with keys mood and tempo_bpm.",
