@@ -79,6 +79,11 @@ public sealed partial class MainPage : Page
     {
         InitializeComponent();
 
+        // MED-19/TMT-15 review finding (code-reviewer): none of the IDisposables built
+        // below (_engineHealthClient, the FoundryLocal* clients inside Orchestrator) are
+        // ever disposed -- accepted as-is, not an oversight: this is a single-window demo
+        // app whose process lifetime equals these HttpClients' useful lifetime, so there's
+        // no Unloaded/reconstruction path that would actually leak a connection.
         _engineHealthClient = new MusicClient();
         _orchestrator = new Orchestrator(
             new FrameExtractor(),

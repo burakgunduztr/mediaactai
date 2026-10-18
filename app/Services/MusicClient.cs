@@ -24,14 +24,20 @@ public sealed class MusicClient : IDisposable
 {
     private readonly HttpClient _http;
 
-    public MusicClient(string baseAddress = "http://127.0.0.1:8765")
+    /// <param name="timeout">
+    /// /generate renders real audio for a whole plan's worth of segments, not just one
+    /// short clip — found as a real hang risk under MED-17/TMT-13, which is the first
+    /// caller to run this against a full multi-segment plan rather than TMT-8's single
+    /// short test segment. HttpClient's 100s default isn't enough; 10 minutes is a
+    /// generous default that still eventually fails instead of hanging forever.
+    /// Overridable (MED-19/TMT-15 review finding, code-reviewer) since this number was
+    /// picked to clear this Mac's CPU inference time, not derived from real ThinkPad GPU
+    /// timing — once that's confirmed (notes/GUIDE_7.md), a demo operator can tighten or
+    /// loosen it without a code change.
+    /// </param>
+    public MusicClient(string baseAddress = "http://127.0.0.1:8765", TimeSpan? timeout = null)
     {
-        // /generate renders real audio for a whole plan's worth of segments, not just
-        // one short clip — found as a real hang risk under MED-17/TMT-13, which is the
-        // first caller to run this against a full multi-segment plan rather than TMT-8's
-        // single short test segment. HttpClient's 100s default isn't enough; 10 minutes
-        // is a generous ceiling that still eventually fails instead of hanging forever.
-        _http = new HttpClient { BaseAddress = new Uri(baseAddress), Timeout = TimeSpan.FromMinutes(10) };
+        _http = new HttpClient { BaseAddress = new Uri(baseAddress), Timeout = timeout ?? TimeSpan.FromMinutes(10) };
     }
 
     public async Task<bool> IsHealthyAsync()

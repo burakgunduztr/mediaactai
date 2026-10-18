@@ -33,8 +33,13 @@ TOKEN_SAFETY_MARGIN = 10  # generate a little extra, then trim — never pad wit
 class MusicGenEngine:
     def __init__(self, model_name: str = MODEL_NAME, device: str | None = None):
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
-        self.processor = AutoProcessor.from_pretrained(model_name)
-        self.model = MusicgenForConditionalGeneration.from_pretrained(model_name).to(self.device)
+        # local_files_only=True, same offline reasoning as server.py's HF_HUB_OFFLINE/
+        # TRANSFORMERS_OFFLINE env vars -- belt and suspenders, since this constructor
+        # is also used directly by tests that don't go through server.py's env setup.
+        self.processor = AutoProcessor.from_pretrained(model_name, local_files_only=True)
+        self.model = MusicgenForConditionalGeneration.from_pretrained(
+            model_name, local_files_only=True
+        ).to(self.device)
         self.model.eval()  # inference only — no dropout/training-mode state to carry between calls
         self.sr = self.model.config.audio_encoder.sampling_rate
 

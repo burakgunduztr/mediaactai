@@ -152,7 +152,22 @@ public sealed class FrameDescriber
         var described = new List<Frame>(frames.Count);
         foreach (var frame in frames)
         {
-            var raw = await _describer.DescribeAsync(frame.Path);
+            string raw;
+            try
+            {
+                raw = await _describer.DescribeAsync(frame.Path);
+            }
+            catch (Exception ex) when (ex is HttpRequestException or InvalidOperationException or TaskCanceledException)
+            {
+                // MED-19/TMT-15 review finding (architect): a transport failure on one
+                // frame (Foundry Local hiccup/unloaded mid-run) previously killed the
+                // whole pipeline here, even though SceneSummarizer's own fallback already
+                // copes with empty descriptions (BuildFallbackSummary joins whatever
+                // non-empty descriptions exist, defaulting to "no description available"
+                // if none do). Degrading one frame to "" is strictly better than stopping
+                // the run over it.
+                raw = "";
+            }
             described.Add(frame with { Description = Truncate(raw, maxWords: 40) });
         }
         return described;
