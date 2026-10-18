@@ -16,6 +16,7 @@
 using System.Text.Json;
 using TempScore.App.Services;
 using TempScore.Core.Models;
+using TempScore.Core.Services;
 
 namespace TempScore.App;
 
@@ -96,17 +97,27 @@ public sealed class Orchestrator
         var plan = await _musicPlanner.PlanAsync(sceneSummary, extraction.DurationSeconds);
         if (onPlanReady is not null)
         {
-            plan = await onPlanReady(plan);
+            // MED-19/TMT-15 review finding (architect): an edited plan must re-pass
+            // MusicPlanValidation -- otherwise a hand-edited segment (prompt too long,
+            // intensity out of range, a gap introduced by the edit) reaches /generate
+            // unchecked and the run 400s instead of degrading. Validate is idempotent
+            // (see MusicPlanValidationTests.Validate_IsIdempotent), so re-running it on
+            // an already-valid, unedited plan is a safe no-op.
+            plan = MusicPlanValidation.Validate(await onPlanReady(plan), extraction.DurationSeconds);
         }
         await WriteDebugJsonAsync(workDir, "plan.json", plan);
 
         progress?.Report(new StepUpdate("Generating music", 5, TotalSteps));
         var scoreWavPath = Path.Combine(workDir, "score.wav");
-        var generated = await _musicClient.GenerateAsync(plan.Segments, scoreWavPath);
+        await _musicClient.GenerateAsync(plan.Segments, scoreWavPath);
 
         progress?.Report(new StepUpdate("Muxing output", 6, TotalSteps));
         var outputPath = Path.Combine(workDir, "output.mp4");
-        await _muxer.MuxAsync(inputVideoPath, generated.Path, outputPath, extraction.HasAudioTrack);
+        // Mux the path this run itself built and validated (scoreWavPath), not
+        // generated.Path from the HTTP response (MED-19/TMT-15 security finding) --
+        // whatever answers on music_service's port should never be able to hand the
+        // app an arbitrary path/URL for ffmpeg to open.
+        await _muxer.MuxAsync(inputVideoPath, scoreWavPath, outputPath, extraction.HasAudioTrack);
 
         return new OrchestratorRunResult(outputPath, workDir);
     }
@@ -137,7 +148,11 @@ public sealed class Orchestrator
     /// "This makes debugging easy and lets you replay a good run if live
     /// generation fails on stage" (the guide's run-folder contract) — best
     /// effort only, never lets a debug-artifact write failure take down an
-    /// otherwise-successful stage.
+    /// otherwise-successful stage. Catches broadly, not just IOException:
+    /// MED-19/TMT-15 review finding (code-reviewer) — UnauthorizedAccessException
+    /// (realistic on Windows with AV scanning a fresh LOCALAPPDATA folder) is not
+    /// an IOException subclass and would otherwise escape and kill an
+    /// otherwise-fully-successful run over a non-essential debug artifact.
     /// </summary>
     private static async Task WriteDebugJsonAsync<T>(string workDir, string fileName, T value)
     {
@@ -145,7 +160,7 @@ public sealed class Orchestrator
         {
             await File.WriteAllTextAsync(Path.Combine(workDir, fileName), JsonSerializer.Serialize(value, DebugJsonOptions));
         }
-        catch (IOException)
+        catch (Exception)
         {
         }
     }

@@ -16,6 +16,15 @@ body is ever trusted. See the containment check and MAX_* constants below.
 
 import os
 
+# MED-19/TMT-15 security finding: transformers/huggingface_hub silently phones
+# home to huggingface.co on every from_pretrained() call (revision checks,
+# telemetry) unless told not to -- model download is a one-off Step 0 setup
+# concern, not something this "fully offline" service should ever do at
+# startup. Must be set before engines.musicgen imports transformers.
+os.environ["HF_HUB_OFFLINE"] = "1"
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
+os.environ["HF_HUB_DISABLE_TELEMETRY"] = "1"
+
 import numpy as np
 import soundfile as sf
 import uvicorn

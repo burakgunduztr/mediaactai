@@ -35,12 +35,12 @@ public sealed class MusicPlanner
     {
         var prompt = BuildPrompt(scenes);
 
-        var response = await _textGenerator.GenerateAsync(prompt);
+        var response = await SafeGenerateAsync(prompt);
         var plan = JsonParsing.ParseJson<MusicPlan>(response);
 
         if (plan is null)
         {
-            var retryResponse = await _textGenerator.GenerateAsync(
+            var retryResponse = await SafeGenerateAsync(
                 prompt + "\n\nYour last answer was not valid JSON. Return only the JSON.");
             plan = JsonParsing.ParseJson<MusicPlan>(retryResponse);
         }
@@ -48,6 +48,25 @@ public sealed class MusicPlanner
         return plan is not null
             ? MusicPlanValidation.Validate(plan, durationSeconds)
             : FallbackTable.BuildFallbackPlan(scenes, durationSeconds);
+    }
+
+    /// <summary>
+    /// MED-19/TMT-15 review finding (architect): a transport failure (Foundry Local
+    /// unreachable/unloaded mid-call) previously propagated straight through this stage
+    /// and killed the whole run, even though a rule-based fallback exists for exactly
+    /// this situation. Treating it the same as a bad-JSON response ("") routes it into
+    /// the same retry-then-fallback path instead of a hard stop.
+    /// </summary>
+    private async Task<string> SafeGenerateAsync(string prompt)
+    {
+        try
+        {
+            return await _textGenerator.GenerateAsync(prompt);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or InvalidOperationException or TaskCanceledException)
+        {
+            return "";
+        }
     }
 
     private static string BuildPrompt(SceneSummary scenes)

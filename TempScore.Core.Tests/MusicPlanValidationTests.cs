@@ -186,4 +186,44 @@ public class MusicPlanValidationTests
         Assert.All(result.Segments, s => Assert.StartsWith(expectedPrefix, s.Prompt));
         Assert.All(result.Segments, s => Assert.DoesNotContain("200 bpm", s.Prompt));
     }
+
+    [Theory]
+    [InlineData(10, 5)] // above range -> clamped to the max, not reset to a default
+    [InlineData(0, 1)]  // below range -> clamped to the min
+    [InlineData(-3, 1)] // negative -> clamped to the min
+    [InlineData(3, 3)]  // already in range -> unchanged
+    public void IntensityOutOfRange_IsClamped(int inputIntensity, int expectedIntensity)
+    {
+        // MED-19/TMT-15 review finding: a real phi-4-mini response hit Intensity 10 during
+        // MED-15's validation. Validate must clamp it, not just BPM.
+        var plan = PlanWith(90, [new Segment(0, 60, inputIntensity, "soft piano")]);
+
+        var result = MusicPlanValidation.Validate(plan, 60);
+
+        Assert.Equal(expectedIntensity, result.Segments[0].Intensity);
+    }
+
+    [Fact]
+    public void Validate_IsIdempotent()
+    {
+        // MED-19/TMT-15 review finding (architect): Orchestrator re-validates a plan after
+        // the onPlanReady edit hook, so Validate(Validate(p)) must equal Validate(p) exactly —
+        // in particular, RestatePrompts must not re-prefix an already-restated prompt.
+        var plan = PlanWith(200, [
+            new Segment(0, 30, 10, "soft piano"),
+            new Segment(30, 60, -3, "strings"),
+        ]);
+
+        var once = MusicPlanValidation.Validate(plan, 60);
+        var twice = MusicPlanValidation.Validate(once, 60);
+
+        Assert.Equal(once.Style, twice.Style);
+        Assert.Equal(once.Bpm, twice.Bpm);
+        Assert.Equal(once.Key, twice.Key);
+        Assert.Equal(once.Segments.Count, twice.Segments.Count);
+        for (int i = 0; i < once.Segments.Count; i++)
+        {
+            Assert.Equal(once.Segments[i], twice.Segments[i]);
+        }
+    }
 }

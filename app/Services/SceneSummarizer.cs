@@ -124,17 +124,38 @@ public sealed class SceneSummarizer
     {
         var prompt = BuildPrompt(frames, cutTimes, durationSeconds);
 
-        var response = await _textGenerator.GenerateAsync(prompt);
+        var response = await SafeGenerateAsync(prompt);
         var summary = JsonParsing.ParseJson<SceneSummary>(response);
 
-        if (summary is null)
+        if (summary is null || summary.Scenes is null || summary.Scenes.Count == 0)
         {
-            var retryResponse = await _textGenerator.GenerateAsync(
+            var retryResponse = await SafeGenerateAsync(
                 prompt + "\n\nYour last answer was not valid JSON. Return only the JSON.");
             summary = JsonParsing.ParseJson<SceneSummary>(retryResponse);
         }
 
-        return summary ?? BuildFallbackSummary(frames, cutTimes, durationSeconds);
+        return summary is not null && summary.Scenes is { Count: > 0 }
+            ? summary
+            : BuildFallbackSummary(frames, cutTimes, durationSeconds);
+    }
+
+    /// <summary>
+    /// MED-19/TMT-15 review finding (architect): a transport failure (Foundry Local
+    /// unreachable/unloaded mid-call) previously propagated straight through this stage
+    /// and killed the whole run, even though a rule-based fallback exists for exactly
+    /// this situation. Treating it the same as a bad-JSON response ("") routes it into
+    /// the same retry-then-fallback path instead of a hard stop.
+    /// </summary>
+    private async Task<string> SafeGenerateAsync(string prompt)
+    {
+        try
+        {
+            return await _textGenerator.GenerateAsync(prompt);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or InvalidOperationException or TaskCanceledException)
+        {
+            return "";
+        }
     }
 
     private static string BuildPrompt(List<Frame> frames, List<double> cutTimes, double durationSeconds)

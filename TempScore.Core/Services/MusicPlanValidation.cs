@@ -15,6 +15,22 @@ public static class MusicPlanValidation
     public const int DefaultBpm = 90;
     public const double MaxSegmentLengthSeconds = 20.0;
 
+    // MED-19/TMT-15 review finding (architect): the prompt asks the model for Intensity
+    // 1-5, but nothing enforced that range before now -- a real phi-4-mini response hit
+    // Intensity 10 during MED-15's validation. Clamped, not reset, since an out-of-range
+    // value still points the right way ("very intense"); resetting to a default would
+    // throw that signal away. Mirrors FallbackTable's own clamp so every path -- real,
+    // fallback, or user-edited -- ends up in the same range.
+    private const int MinIntensity = 1;
+    private const int MaxIntensity = 5;
+
+    // Matches music_service/server.py's MAX_PROMPT_CHARS exactly -- duplicated rather than
+    // shared across the C#/Python boundary, same as every other cross-language constant in
+    // this pipeline (BPM range, segment length cap). A restated prompt over this length
+    // would otherwise 400 at music_service, not here, turning a cosmetic model verbosity
+    // issue into a run that fails on stage.
+    private const int MaxPromptChars = 500;
+
     private const string DefaultStyle = "cinematic orchestral, piano lead";
     private const string DefaultKey = "A minor";
 
@@ -102,6 +118,14 @@ public static class MusicPlanValidation
     /// per the guide's "every segment prompt must restate the global style/bpm/key" rule — this
     /// is what keeps the music sounding like one piece instead of disconnected clips, and it
     /// must use the corrected BPM so the text never disagrees with the plan.
+    ///
+    /// Idempotent by construction (MED-19/TMT-15 review finding, architect): a body that
+    /// already starts with the current prefix is left alone rather than re-prefixed, so
+    /// calling Validate twice on the same plan — e.g. once on the real/fallback output, then
+    /// again after Orchestrator's onPlanReady edit hook — never compounds the prefix into
+    /// "style, bpm, key, style, bpm, key, ...". Also clamps Intensity and truncates the final
+    /// prompt to MaxPromptChars here, since this is the one place every segment's final shape
+    /// is assembled.
     /// </summary>
     private static List<Segment> RestatePrompts(List<Segment> segments, string style, int bpm, string key)
     {
@@ -110,8 +134,20 @@ public static class MusicPlanValidation
             .Select(s =>
             {
                 string body = s.Prompt ?? "";
-                string restated = body.Length == 0 ? prefix : $"{prefix}, {body}";
-                return s with { Prompt = restated };
+                string restated = body.Length == 0
+                    ? prefix
+                    : body.StartsWith(prefix, StringComparison.Ordinal)
+                        ? body
+                        : $"{prefix}, {body}";
+                if (restated.Length > MaxPromptChars)
+                {
+                    restated = restated[..MaxPromptChars];
+                }
+                return s with
+                {
+                    Prompt = restated,
+                    Intensity = Math.Clamp(s.Intensity, MinIntensity, MaxIntensity),
+                };
             })
             .ToList();
     }
