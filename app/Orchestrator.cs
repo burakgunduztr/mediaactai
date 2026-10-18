@@ -22,7 +22,20 @@ namespace TempScore.App;
 
 public sealed record StepUpdate(string StepName, int StepIndex, int TotalSteps);
 
-public sealed record OrchestratorRunResult(string OutputVideoPath, string WorkDir);
+/// <summary>
+/// InputVideoPath/DurationSeconds/HasAudioTrack/Plan (MED-18/TMT-14, added for
+/// regenerate-from-plan) are exactly what RegenerateAsync needs to rerun steps
+/// 5-6 without repeating extraction/description/summarization/planning --
+/// carried on the result so MainPage doesn't have to track them itself as
+/// separate state alongside this.
+/// </summary>
+public sealed record OrchestratorRunResult(
+    string OutputVideoPath,
+    string WorkDir,
+    string InputVideoPath,
+    double DurationSeconds,
+    bool HasAudioTrack,
+    MusicPlan Plan);
 
 /// <summary>
 /// Sequences the six pipeline stages against one input video. Writes to a
@@ -119,7 +132,69 @@ public sealed class Orchestrator
         // app an arbitrary path/URL for ffmpeg to open.
         await _muxer.MuxAsync(inputVideoPath, scoreWavPath, outputPath, extraction.HasAudioTrack);
 
-        return new OrchestratorRunResult(outputPath, workDir);
+        return new OrchestratorRunResult(outputPath, workDir, inputVideoPath, extraction.DurationSeconds, extraction.HasAudioTrack, plan);
+    }
+
+    /// <summary>
+    /// MED-18/TMT-14: reruns only steps 5-6 (Generating music, Muxing output) --
+    /// "Steps 7-8" in notes/TempScore-Implementation-Guide.md's own numbering --
+    /// against an already-known duration/audio-track and a plan the caller
+    /// supplies (either hand-edited via MainPage's plan panel, or produced by
+    /// ApplyMoodWord). Skips frame extraction, description, summarization, and
+    /// planning entirely, since none of those change when only the music does --
+    /// this is what makes it measurably faster than RunAsync, not just a
+    /// smaller step count on paper.
+    ///
+    /// Writes to its own fresh run folder, same as RunAsync, so each attempt
+    /// stays independently replayable per the run-folder contract -- it does
+    /// not overwrite the run it started from.
+    /// </summary>
+    public async Task<OrchestratorRunResult> RegenerateAsync(
+        string inputVideoPath,
+        double durationSeconds,
+        bool hasAudioTrack,
+        MusicPlan editedPlan,
+        IProgress<StepUpdate>? progress = null)
+    {
+        const int regenerateTotalSteps = 2;
+        var workDir = Path.Combine(ResolveRunsBaseDir(), DateTime.UtcNow.ToString("yyyyMMdd_HHmmss_fff"));
+        Directory.CreateDirectory(workDir);
+
+        // Re-validate here for the same reason RunAsync does after onPlanReady: a
+        // hand-edited or mood-word-appended plan must not reach /generate unchecked.
+        var plan = MusicPlanValidation.Validate(editedPlan, durationSeconds);
+        await WriteDebugJsonAsync(workDir, "plan.json", plan);
+
+        progress?.Report(new StepUpdate("Generating music", 1, regenerateTotalSteps));
+        var scoreWavPath = Path.Combine(workDir, "score.wav");
+        await _musicClient.GenerateAsync(plan.Segments, scoreWavPath);
+
+        progress?.Report(new StepUpdate("Muxing output", 2, regenerateTotalSteps));
+        var outputPath = Path.Combine(workDir, "output.mp4");
+        await _muxer.MuxAsync(inputVideoPath, scoreWavPath, outputPath, hasAudioTrack);
+
+        return new OrchestratorRunResult(outputPath, workDir, inputVideoPath, durationSeconds, hasAudioTrack, plan);
+    }
+
+    /// <summary>
+    /// MED-18/TMT-14's mood slider: "adds a word to every prompt, regenerates."
+    /// Always applied to the plan as MusicPlanner/the fallback originally
+    /// produced it (the caller's job to pass that unmutated baseline, not
+    /// whatever the panel currently shows), so moving the slider never
+    /// compounds previous mood words onto each other -- each move is a single,
+    /// fresh word appended to the original prompts. RestatePrompts' own
+    /// idempotency (MED-19/TMT-15) is what keeps the style/bpm/key prefix from
+    /// doubling when this edited plan is re-validated inside RegenerateAsync.
+    /// </summary>
+    public static MusicPlan ApplyMoodWord(MusicPlan plan, string moodWord)
+    {
+        if (string.IsNullOrWhiteSpace(moodWord))
+        {
+            return plan;
+        }
+
+        var segments = plan.Segments.Select(s => s with { Prompt = $"{s.Prompt}, {moodWord}" }).ToList();
+        return plan with { Segments = segments };
     }
 
     /// <summary>
