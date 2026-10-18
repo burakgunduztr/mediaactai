@@ -16,7 +16,17 @@ Requires the CUDA 12.8 torch/torchaudio build, not the Mac CPU wheels —
 see notes/installForWindows.md Step 3 and music_service/requirements.txt.
 """
 
+import os
 import time
+
+# Same offline fix as music_service/server.py (MED-19/TMT-15 security review):
+# from_pretrained() phones home to huggingface.co for a revision check unless
+# told not to -- a real finding there, and this standalone smoke test has the
+# identical unprotected call, just never carried the fix since it's a
+# separate file. Must be set before transformers is imported.
+os.environ["HF_HUB_OFFLINE"] = "1"
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
+os.environ["HF_HUB_DISABLE_TELEMETRY"] = "1"
 
 from transformers import AutoProcessor, MusicgenForConditionalGeneration
 import scipy.io.wavfile
@@ -28,8 +38,10 @@ if not torch.cuda.is_available():
         "build on the ThinkPad, not the Mac CPU wheels. See notes/installForWindows.md."
     )
 
-proc = AutoProcessor.from_pretrained("facebook/musicgen-small")
-model = MusicgenForConditionalGeneration.from_pretrained("facebook/musicgen-small").to("cuda")
+proc = AutoProcessor.from_pretrained("facebook/musicgen-small", local_files_only=True)
+model = MusicgenForConditionalGeneration.from_pretrained(
+    "facebook/musicgen-small", local_files_only=True
+).to("cuda")
 inputs = proc(text=["slow melancholic piano and strings, 70 bpm, A minor"], return_tensors="pt").to("cuda")
 
 start = time.perf_counter()
