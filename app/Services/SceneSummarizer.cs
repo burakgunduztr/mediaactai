@@ -10,6 +10,7 @@
 // descriptions from TMT-10, before this repo had a WinUI project to put it in.
 // See notes/GUIDE_5.md for what's still open on the ThinkPad.
 
+using System.Diagnostics;
 using System.Globalization;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
@@ -43,7 +44,9 @@ public sealed class FoundryLocalTextGenerator : ITextGenerator, IDisposable
     /// resolved from /v1/models at first use, not hardcoded, since the
     /// version suffix (e.g. ":5") can change between catalog updates.
     /// </param>
-    public FoundryLocalTextGenerator(string baseAddress = "http://127.0.0.1:56343", string aliasPrefix = "phi-4-mini")
+    public FoundryLocalTextGenerator(
+        string baseAddress = "http://127.0.0.1:53430",
+        string aliasPrefix = "phi-4-mini-instruct-openvino-npu")
     {
         _http = new HttpClient { BaseAddress = new Uri(baseAddress) };
         _aliasPrefix = aliasPrefix;
@@ -60,11 +63,20 @@ public sealed class FoundryLocalTextGenerator : ITextGenerator, IDisposable
                 new ChatMessage("user", prompt),
             ],
             Temperature: 0.2,
-            MaxTokens: 600);
+            MaxTokens: 2048);
 
         using var response = await _http.PostAsJsonAsync("/v1/chat/completions", request);
-        response.EnsureSuccessStatusCode();
+        // response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+        {
+            var err = await response.Content.ReadAsStringAsync();
+            throw new HttpRequestException(
+                $"Foundry {(int)response.StatusCode}: {err}");
+        }
         var body = await response.Content.ReadFromJsonAsync<ChatResponse>();
+        var choice = body?.Choices.FirstOrDefault();
+        Debug.WriteLine($"FINISH: {choice?.FinishReason}");
+        Debug.WriteLine($"RAW: {choice?.Message.Content}");
         return body?.Choices.FirstOrDefault()?.Message.Content?.Trim() ?? "";
     }
 
@@ -76,11 +88,20 @@ public sealed class FoundryLocalTextGenerator : ITextGenerator, IDisposable
         }
 
         var models = await _http.GetFromJsonAsync<ModelsResponse>("/v1/models");
+        _resolvedModelId = models?.Data
+            .Select(m => m.Id)
+            .FirstOrDefault(id => id.Split(':')[0]
+            .Equals(_aliasPrefix, StringComparison.OrdinalIgnoreCase))
+            ?? throw new InvalidOperationException(
+                $"'{_aliasPrefix}' not found in /v1/models. Is it loaded?");
+        return _resolvedModelId;
+        /*
         var match = models?.Data.FirstOrDefault(m => m.Id.StartsWith(_aliasPrefix, StringComparison.OrdinalIgnoreCase))
             ?? throw new InvalidOperationException(
                 $"No loaded model id starts with '{_aliasPrefix}' — run `foundry model load {_aliasPrefix}` first.");
         _resolvedModelId = match.Id;
         return _resolvedModelId;
+        */
     }
 
     public void Dispose() => _http.Dispose();
@@ -97,7 +118,8 @@ public sealed class FoundryLocalTextGenerator : ITextGenerator, IDisposable
 
     private sealed record ChatResponseMessage([property: JsonPropertyName("content")] string? Content);
 
-    private sealed record ChatChoice([property: JsonPropertyName("message")] ChatResponseMessage Message);
+    private sealed record ChatChoice([property: JsonPropertyName("message")] ChatResponseMessage Message,
+                                     [property: JsonPropertyName("finish_reason")] string? FinishReason);
 
     private sealed record ChatResponse([property: JsonPropertyName("choices")] List<ChatChoice> Choices);
 

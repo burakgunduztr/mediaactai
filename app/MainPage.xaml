@@ -7,14 +7,16 @@
 
   MED-18/TMT-14 addition: a Regenerate button and a mood slider + Apply
   button under the plan panel. Both only raise click events that
-  MainPage.xaml.cs forwards into Orchestrator -- see that file's header for
+  MainPage.xaml.cs forwards into Orchestrator : see that file's header for
   what's in/out of scope (the offline badge, TMT-14's third item, is not
   included).
 
   UNVERIFIED ON MAC: there is no WinUI 3 / Windows App SDK on macOS, so
   this markup has never been through the XAML compiler. It assumes the
-  WinUI 3 project created per notes/GUIDE_3.md names its root namespace
-  TempScore.App and that MainPage is added as a Page under app/ — if the
+  WinUI 3 project created per notes/GUIDE_3.md names its root namespacec:\users\test\desktop\mediaactaifinal\app\mainpage.xaml.cs
+c:\users\test\desktop\mediaactaifinal\app\mainpage.xaml
+
+  TempScore.App and that MainPage is added as a Page under app/ : if the
   ThinkPad project differs, x:Class below needs to match. See
   notes/GUIDE_7.md and notes/GUIDE_9.md for what to check/fix on the
   ThinkPad before this compiles and runs.
@@ -85,7 +87,7 @@
                     <Button x:Name="RegenerateButton" Content="Regenerate"
                             Click="OnRegenerateClick" IsEnabled="False" Margin="0,8,0,0"/>
 
-                    <!-- MED-18/TMT-14: mood slider -- always applied fresh to the original
+                    <!-- MED-18/TMT-14: mood slider : always applied fresh to the original
                          plan, never compounded onto a previous mood word (see
                          MainPage.xaml.cs's OnApplyMoodClick). -->
                     <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,12,0,0">

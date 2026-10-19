@@ -18,6 +18,7 @@
 // FrameDescriber or this interface. Not written here: it needs the real
 // Windows AI APIs to write against, which don't exist on Mac.
 
+using System.Diagnostics;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using TempScore.Core.Models;
@@ -42,14 +43,16 @@ public sealed class FoundryLocalImageDescriber : IImageDescriber, IDisposable
     private string? _resolvedModelId;
 
     /// <param name="aliasPrefix">
-    /// The CLI alias used by `foundry model load` (e.g. "qwen3-vl-2b-instruct",
+    /// The CLI alias used by `foundry model load` (e.g. "qwen3.5-2b",
     /// confirmed working on Mac). The chat endpoint needs the exact catalog
     /// model id, not this alias — same gotcha as MED-9/MED-15's text path —
     /// so this is resolved from /v1/models at first use, not hardcoded.
     /// The ThinkPad may end up loading a different (GPU-targeted) model from
     /// its own catalog; pass that alias here instead of changing this file.
     /// </param>
-    public FoundryLocalImageDescriber(string baseAddress = "http://127.0.0.1:56343", string aliasPrefix = "qwen3-vl-2b-instruct")
+    public FoundryLocalImageDescriber(
+        string baseAddress = "http://127.0.0.1:53430", 
+        string aliasPrefix = "qwen3.5-2b-generic-cpu")
     {
         _http = new HttpClient { BaseAddress = new Uri(baseAddress) };
         _aliasPrefix = aliasPrefix;
@@ -75,11 +78,19 @@ public sealed class FoundryLocalImageDescriber : IImageDescriber, IDisposable
                     ])
             ],
             Temperature: 0.2,
-            MaxTokens: 100);
+            MaxTokens: 2048);
 
         using var response = await _http.PostAsJsonAsync("/v1/chat/completions", request);
-        response.EnsureSuccessStatusCode();
+        // .EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode) 
+        {
+            var err = await response.Content.ReadAsStringAsync();
+            throw new HttpRequestException(
+                $"Foundry {(int)response.StatusCode}: {err}");
+        }
         var body = await response.Content.ReadFromJsonAsync<ChatResponse>();
+        var text = body?.Choices.FirstOrDefault()?.Message.Content?.Trim() ?? "";
+        Debug.WriteLine($"FRAME {Path.GetFileName(framePath)}: {text}");
         return body?.Choices.FirstOrDefault()?.Message.Content?.Trim() ?? "";
     }
 

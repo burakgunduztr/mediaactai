@@ -27,6 +27,20 @@ TestResults/
 *.nupkg
 *.snupkg
 
+# MSIX / Store packaging output, and the temporary signing key Visual Studio
+# generates next to the project. Publish profiles stay tracked; their output
+# lands under bin/, which is already ignored.
+AppPackages/
+BundleArtifacts/
+Package.StoreAssociation.xml
+*.appx
+*.appxbundle
+*.appxupload
+*.msix
+*.msixbundle
+*.msixupload
+*.pfx
+
 # Model weights and download caches (setup downloads, not source)
 .cache/
 .huggingface/
@@ -52,6 +66,10 @@ score.wav
 test.wav
 output.mp4
 
+# Sample media. Clips already committed stay tracked; new files dropped
+# into samples/ stay local.
+samples/
+
 # Local planning (not source)
 epic/
 notes/
@@ -59,6 +77,7 @@ notes/
 # OS
 .DS_Store
 .AppleDouble
+._*
 .LSOverride
 Thumbs.db
 Desktop.ini

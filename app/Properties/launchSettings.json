@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "TempScore.App (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "TempScore.App (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

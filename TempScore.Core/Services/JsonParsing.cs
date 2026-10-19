@@ -16,6 +16,10 @@ public static class JsonParsing
         int a = text.IndexOf('{'), b = text.LastIndexOf('}');
         if (a < 0 || b <= a) return default;
         try { return JsonSerializer.Deserialize<T>(text[a..(b + 1)], Options); }
-        catch (JsonException) { return default; }
+        catch (JsonException ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"PARSE FAILED: {ex.Message}");
+            return default; 
+        }
     }
 }

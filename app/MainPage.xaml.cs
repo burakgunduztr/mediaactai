@@ -90,6 +90,18 @@ public sealed partial class MainPage : Page
 {
     private static readonly string[] MoodWords = ["somber", "calm", "warm", "energetic", "triumphant"];
 
+    // Same pattern as foundry_local/smoke_test.py's --base/$FOUNDRY_LOCAL_BASE_URL fix
+    // (PR #17) -- a real port belongs in an env var, not a hand-edited constant.
+    // Set this once per machine/session from `foundry server status`'s reported port;
+    // falls back to the Mac-default ephemeral port if unset.
+    private static readonly string FoundryBaseAddress =
+        Environment.GetEnvironmentVariable("FOUNDRY_LOCAL_BASE_URL") ?? "http://127.0.0.1:53430";
+
+    // CPU-targeted vision model (qwen3-vl-2b-instruct), not the GPU-targeted
+    // qwen3.5-2b originally planned for the ThinkPad's RTX PRO 2000 -- see
+    // notes/cpuQWEN.md for why the GPU variant was dropped.
+    private const string VisionModelAlias = "qwen3.5-2b-generic-cpu";
+
     private readonly Orchestrator _orchestrator;
     private readonly MusicClient _engineHealthClient;
     private StorageFile? _selectedFile;
@@ -119,12 +131,15 @@ public sealed partial class MainPage : Page
         // no Unloaded/reconstruction path that would actually leak a connection.
         _engineHealthClient = new MusicClient();
         _orchestrator = new Orchestrator(
-            new FrameExtractor(),
-            new FrameDescriber(new FoundryLocalImageDescriber()),
-            new SceneSummarizer(new FoundryLocalTextGenerator()),
-            new MusicPlanner(new FoundryLocalTextGenerator()),
-            _engineHealthClient,
-            new Muxer());
+           new FrameExtractor(),
+           new FrameDescriber(new FoundryLocalImageDescriber(
+               baseAddress: FoundryBaseAddress,
+               aliasPrefix: VisionModelAlias)),
+           new SceneSummarizer(new FoundryLocalTextGenerator(baseAddress: FoundryBaseAddress)),
+           new MusicPlanner(new FoundryLocalTextGenerator(baseAddress: FoundryBaseAddress)),
+           _engineHealthClient,
+           new Muxer());
+
 
         _ = RefreshEngineStatusAsync();
     }
