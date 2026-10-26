@@ -21,7 +21,7 @@ To build this efficiently on an environment that was new to me, I leaned on agen
 ### Demo & links
 
 - 🎬 **Watch the demo:** [YouTube](https://youtu.be/mrqjKA4Qp5I)
-- 🔗 **Project page:** [FSO Hackathon 2026](https://devpost.com/software/PROJECT_SLUG)
+- 🔗 **Project page:** [FSO Hackathon 2026](https://fso-hackaithon-2026.netlify.app/p/11-film-music-composer.html)
 
 ### Architecture at a glance
 
